@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KarcisParkir — Kalkulator Tarif Parkir 6 Kota</title>
+<meta name="description" content="KarcisParkir: pilih kota, atur durasi, terima karcis parkir digital bernomor dengan rincian tarif contoh sesuai perda. Jakarta, Surabaya, Bandung, Yogyakarta, Semarang, Medan.">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#cfe08a">
+<script>
+/* Mode gerak awal — diset SEBELUM first paint agar state final tiap mode
+   (marquee statis di tenang/mati, animasi CSS di ringan) tidak menggeser
+   layout saat modul JS init. */
+(function(){try{
+var red=matchMedia('(prefers-reduced-motion: reduce)').matches;
+var ringan=(navigator.connection&&navigator.connection.saveData)||(navigator.hardwareConcurrency||8)<=4||(navigator.deviceMemory||8)<=4;
+document.documentElement.dataset.mode=red?'mati':(ringan?'ringan':'penuh');
+}catch(e){}})();
+</script>
+<link rel="preload" href="fonts/stylish-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/manuale-variable.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/plaster-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a id="lewati" href="#konten">Lewati ke konten utama</a>
+
+<svg class="grain" aria-hidden="true" focusable="false">
+<filter id="grain-f"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch"/><feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.55 0"/></filter>
+<rect width="100%" height="100%" filter="url(#grain-f)"/>
+</svg>
+
+<header class="karcis-top">
+  <a class="logo" href="#kota" aria-label="KarcisParkir — kembali ke pilih kota">
+    <svg class="ikon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <g class="lb" transform="translate(1.6,1.6)"><rect x="3" y="7" width="18" height="11" rx="1.5"/><path d="M15 7v11" stroke-dasharray="2.5 2.5"/><circle cx="9" cy="12.5" r="1.4"/></g>
+      <g class="ld"><rect x="3" y="7" width="18" height="11" rx="1.5"/><path d="M15 7v11" stroke-dasharray="2.5 2.5"/><circle cx="9" cy="12.5" r="1.4"/></g>
+    </svg>
+    <span>KarcisParkir</span>
+  </a>
+  <label class="gerak-switch" for="gerak-toggle">
+    <input type="checkbox" id="gerak-toggle" checked>
+    <span class="rel">Gerak: <strong id="gerak-label">nyala</strong></span>
+  </label>
+</header>
+
+<div class="marquee" id="marquee-a" role="region" aria-label="Pita info tarif">
+  <div class="marquee-track">
+    <div class="marquee-seg">
+      <span class="mq-item"><svg class="ikon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><g class="lb" transform="translate(1.6,1.6)"><circle cx="6" cy="17" r="3.2"/><circle cx="18" cy="17" r="3.2"/><path d="M6 17l3.5-7H14l2 5M9.5 10L8 6.5h2.5M14 12h4"/></g><g class="ld"><circle cx="6" cy="17" r="3.2"/><circle cx="18" cy="17" r="3.2"/><path d="M6 17l3.5-7H14l2 5M9.5 10L8 6.5h2.5M14 12h4"/></g></svg>MOTOR 2–3RB/JAM</span>
+      <span class="mq-item"><svg class="ikon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><g class="lb" transform="translate(1.6,1.6)"><path d="M3 16v-4l2-5h11l3 4h2v5h-2.2"/><circle cx="7.5" cy="17.5" r="2"/><circle cx="16.5" cy="17.5" r="2"/><path d="M9.5 17.5h5M3 16h2.5"/></g><g class="ld"><path d="M3 16v-4l2-5h11l3 4h2v5h-2.2"/><circle cx="7.5" cy="17.5" r="2"/><circle cx="16.5" cy="17.5" r="2"/><path d="M9.5 17.5h5M3 16h2.5"/></g></svg>MOBIL 3–5RB/JAM</span>
+      <span class="mq-item"><svg class="ikon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><g class="lb" transform="translate(1.6,1.6)"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.5"/></g><g class="ld"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.5"/></g></svg>BAYAR SESUAI KARCIS</span>
+      <span class="mq-item"><svg class="ikon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><g class="lb" transform="translate(1.6,1.6)"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2"/></g><g class="ld"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2"/></g></svg>HITUNG PER JAM</span>
+      <span class="mq-item"><svg class="ikon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><g class="lb" transform="translate(1.6,1.6)"><path d="M5 21V8"/><path d="M5 8l14-4 1 3-14 4z"/><path d="M9 6.9l2.5-.7M13.5 5.7l2.5-.7"/></g><g class="ld"><path d="M5 21V8"/><path d="M5 8l14-4 1 3-14 4z"/><path d="M9 6.9l2.5-.7M13.5 5.7l2.5-.7"/></g></svg>PALANG NAIK = LUNAS</span>
+      <span class="mq-item"><svg class="ikon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><g class="lb" transform="translate(1.6,1.6)"><path d="M3 14a9 9 0 0 1 18 0v3H3z"/><circle cx="16.5" cy="11" r="1.5"/></g><g class="ld"><path d="M3 14a9 9 0 0 1 18 0v3H3z"/><circle cx="16.5" cy="11" r="1.5"/></g></svg>HELM JANGAN DITINGGAL</span>
+    </div>
+  </div>
+  <button type="button" class="marquee-jeda" aria-pressed="false" aria-label="Jeda atau jalankan pita tarif">
+    <svg class="ikon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><g class="lb" transform="translate(1.6,1.6)"><path d="M8 5v14M16 5v14"/></g><g class="ld"><path d="M8 5v14M16 5v14"/></g></svg>
+    <span class="label">Jeda</span>
+  </button>
+</div>
+
+<main id="konten">
+  <section id="kota" aria-labelledby="h-kota">
+    <p class="kicker denyut">Mesin karcis digital · 6 kota · tarif contoh sesuai perda</p>
+    <h1 id="h-kota" class="misreg" data-text="ISI KARCISNYA, MAS">ISI KARCISNYA, MAS</h1>
+    <p class="lede" data-split>Pilih kota dulu, Mas — tarif resmi biar nggak ditembak parkir liar.</p>
+    <div class="kota-grid" id="kota-grid" role="list">
+<!-- Kartu pre-render statis dari js/data.js (anti-CLS: isi ada sebelum first paint).
+     Jangan edit manual — generate ulang via: node /tmp/gen-cards.mjs -- lalu tempel. -->
+      <button type="button" class="kota-card tilt" data-kota="jakarta" aria-pressed="false" aria-label="Pilih kota Jakarta. Motor Rp2.000/jam · Mobil Rp5.000/jam. Sumber: Pergub 31/2017 + Perda 1/2024">
+        <span class="kota-word" aria-hidden="true">Jakarta</span>
+        <span class="kota-tarif">Motor Rp2.000/jam · Mobil Rp5.000/jam</span>
+        <span class="kota-zona">TJU on-street</span>
+      </button>
+      <button type="button" class="kota-card tilt" data-kota="surabaya" aria-pressed="false" aria-label="Pilih kota Surabaya. Motor Rp2.000/parkir · Mobil Rp5.000/parkir. Sumber: Dishub Surabaya">
+        <span class="kota-word" aria-hidden="true">Surabaya</span>
+        <span class="kota-tarif">Motor Rp2.000/parkir · Mobil Rp5.000/parkir</span>
+        <span class="kota-zona">TJU</span>
+      </button>
+      <button type="button" class="kota-card tilt" data-kota="bandung" aria-pressed="false" aria-label="Pilih kota Bandung. Motor Rp3.000/jam · Mobil Rp5.000/jam. Sumber: Perwal 66/2021">
+        <span class="kota-word" aria-hidden="true">Bandung</span>
+        <span class="kota-tarif">Motor Rp3.000/jam · Mobil Rp5.000/jam</span>
+        <span class="kota-zona">Pusat · +1 zona</span>
+      </button>
+      <button type="button" class="kota-card tilt" data-kota="yogyakarta" aria-pressed="false" aria-label="Pilih kota Yogyakarta. Motor Rp2.000/jam · Mobil Rp5.000/jam. Sumber: Sumber tunggal — label contoh">
+        <span class="kota-word" aria-hidden="true">Yogyakarta</span>
+        <span class="kota-tarif">Motor Rp2.000/jam · Mobil Rp5.000/jam</span>
+        <span class="kota-zona">Kawasan 1 (Malioboro) · +1 zona</span>
+      </button>
+      <button type="button" class="kota-card tilt" data-kota="semarang" aria-pressed="false" aria-label="Pilih kota Semarang. Motor Rp2.000/jam · Mobil Rp3.000/jam. Sumber: Dishub Semarang">
+        <span class="kota-word" aria-hidden="true">Semarang</span>
+        <span class="kota-tarif">Motor Rp2.000/jam · Mobil Rp3.000/jam</span>
+        <span class="kota-zona">Zona A</span>
+      </button>
+      <button type="button" class="kota-card tilt" data-kota="medan" aria-pressed="false" aria-label="Pilih kota Medan. Motor Rp2.000/parkir · Mobil Rp4.000/parkir. Sumber: Perwal 9/2026">
+        <span class="kota-word" aria-hidden="true">Medan</span>
+        <span class="kota-tarif">Motor Rp2.000/parkir · Mobil Rp4.000/parkir</span>
+        <span class="kota-zona">TJU</span>
+      </button>
+    </div>
+  </section>
+
+  <div class="perforasi" aria-hidden="true"></div>
+
+  <section id="durasi" aria-labelledby="h-durasi">
+    <h2 id="h-durasi" class="misreg" data-text="ATUR DURASINYA">ATUR DURASINYA</h2>
+    <fieldset class="kendaraan">
+      <legend>Kendaraan</legend>
+      <label class="pilihan"><input type="radio" name="kendaraan" id="kend-motor" value="motor" checked>
+        <svg class="ikon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><g class="lb" transform="translate(1.6,1.6)"><circle cx="6" cy="17" r="3.2"/><circle cx="18" cy="17" r="3.2"/><path d="M6 17l3.5-7H14l2 5M9.5 10L8 6.5h2.5M14 12h4"/></g><g class="ld"><circle cx="6" cy="17" r="3.2"/><circle cx="18" cy="17" r="3.2"/><path d="M6 17l3.5-7H14l2 5M9.5 10L8 6.5h2.5M14 12h4"/></g></svg>
+        Motor</label>
+      <label class="pilihan"><input type="radio" name="kendaraan" id="kend-mobil" value="mobil">
+        <svg class="ikon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><g class="lb" transform="translate(1.6,1.6)"><path d="M3 16v-4l2-5h11l3 4h2v5h-2.2"/><circle cx="7.5" cy="17.5" r="2"/><circle cx="16.5" cy="17.5" r="2"/><path d="M9.5 17.5h5M3 16h2.5"/></g><g class="ld"><path d="M3 16v-4l2-5h11l3 4h2v5h-2.2"/><circle cx="7.5" cy="17.5" r="2"/><circle cx="16.5" cy="17.5" r="2"/><path d="M9.5 17.5h5M3 16h2.5"/></g></svg>
+        Mobil</label>
+    </fieldset>
+    <div id="zona-wrap" hidden>
+      <label for="zona">Zona tarif</label>
+      <select id="zona"></select>
+    </div>
+    <div class="slider-wrap">
+      <label for="durasi-range">Durasi parkir — <output id="durasi-nilai" for="durasi-range">2 jam</output></label>
+      <input type="range" id="durasi-range" min="1" max="12" step="1" value="2" aria-describedby="durasi-bantu">
+      <p id="durasi-bantu" class="bantu">Geser 1–12 jam. Atau isi jam masuk &amp; keluar di bawah (maks 24 jam).</p>
+    </div>
+    <div class="jam-row">
+      <div>
+        <label for="jam-masuk">Jam masuk <span class="bantu">(opsional)</span></label>
+        <input type="time" id="jam-masuk">
+      </div>
+      <div>
+        <label for="jam-keluar">Jam keluar <span class="bantu">(opsional)</span></label>
+        <input type="time" id="jam-keluar">
+      </div>
+    </div>
+    <p class="estimasi-live denyut" data-scramble aria-live="polite">Pilih kota dulu, Mas — jangan asal gas.</p>
+  </section>
+
+  <div class="perforasi" aria-hidden="true"></div>
+
+  <div class="marquee" id="marquee-b" role="region" aria-label="Pita fakta nuthuk">
+    <div class="marquee-track"><div class="marquee-seg"></div></div>
+    <button type="button" class="marquee-jeda" aria-pressed="false" aria-label="Jeda atau jalankan pita fakta">
+      <svg class="ikon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><g class="lb" transform="translate(1.6,1.6)"><path d="M8 5v14M16 5v14"/></g><g class="ld"><path d="M8 5v14M16 5v14"/></g></svg>
+      <span class="label">Jeda</span>
+    </button>
+  </div>
+
+  <section id="karcis" aria-labelledby="h-karcis">
+    <h2 id="h-karcis" class="misreg" data-text="KARCISNYA NIH">KARCISNYA NIH</h2>
+    <svg class="palang-besar" viewBox="0 0 120 84" data-gambar aria-hidden="true" focusable="false">
+      <rect class="isi" x="34" y="6" width="72" height="66" rx="4"/>
+      <g class="garis">
+        <path d="M20 78V26" pathLength="1"/>
+        <path d="M20 30L106 12" pathLength="1" class="lengan"/>
+        <path d="M40 26.5l4-1M52 24l4-1M64 21.6l4-1M76 19l4-1" pathLength="1"/>
+        <rect x="12" y="70" width="16" height="8" rx="1" pathLength="1"/>
+      </g>
+    </svg>
+    <article class="karcis-cetak tilt" aria-label="Karcis parkir hasil cetak">
+      <svg class="garis-karcis" viewBox="0 0 300 190" data-gambar aria-hidden="true" focusable="false">
+        <rect class="isi" x="8" y="8" width="284" height="174" rx="10"/>
+        <g class="garis">
+          <rect x="8" y="8" width="284" height="174" rx="10" pathLength="1"/>
+          <path d="M8 64h284" pathLength="1" stroke-dasharray="1"/>
+          <path d="M8 150h284" pathLength="1"/>
+        </g>
+      </svg>
+      <p class="nomor-seri" data-scramble>KP-2026-····</p>
+      <p class="karcis-kota">Belum ada kota — pilih di atas dulu, Mas.</p>
+      <p class="karcis-meta">—</p>
+      <dl class="rincian"></dl>
+      <p class="total" data-scramble>Rp0</p>
+      <p class="karcis-catatan">Tarif contoh sesuai perda.</p>
+      <div class="cap-contoh" aria-hidden="true">CONTOH</div>
+    </article>
+    <div class="aksi">
+      <button type="button" id="cetak" class="btn magnet">
+        <svg class="ikon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><g class="lb" transform="translate(1.6,1.6)"><path d="M7 8V3.5h10V8"/><rect x="4" y="8" width="16" height="8" rx="1.5"/><rect x="7" y="13" width="10" height="7"/></g><g class="ld"><path d="M7 8V3.5h10V8"/><rect x="4" y="8" width="16" height="8" rx="1.5"/><rect x="7" y="13" width="10" height="7"/></g></svg>
+        Cetak karcis</button>
+      <button type="button" id="salin-wa" class="btn magnet">
+        <svg class="ikon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><g class="lb" transform="translate(1.6,1.6)"><rect x="8" y="8" width="12" height="12" rx="1.5"/><path d="M16 8V5.5A1.5 1.5 0 0 0 14.5 4h-9A1.5 1.5 0 0 0 4 5.5v9A1.5 1.5 0 0 0 5.5 16H8"/></g><g class="ld"><rect x="8" y="8" width="12" height="12" rx="1.5"/><path d="M16 8V5.5A1.5 1.5 0 0 0 14.5 4h-9A1.5 1.5 0 0 0 4 5.5v9A1.5 1.5 0 0 0 5.5 16H8"/></g></svg>
+        Salin ringkasan WA</button>
+      <button type="button" id="unduh-json" class="btn magnet">
+        <svg class="ikon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><g class="lb" transform="translate(1.6,1.6)"><path d="M12 4v11M7 11l5 5 5-5"/><path d="M4 20h16"/></g><g class="ld"><path d="M12 4v11M7 11l5 5 5-5"/><path d="M4 20h16"/></g></svg>
+        Unduh JSON</button>
+    </div>
+  </section>
+
+  <div class="perforasi" aria-hidden="true"></div>
+
+  <section id="fakta" aria-labelledby="h-fakta">
+    <h2 id="h-fakta" class="misreg" data-text="FAKTA NUTHUK">FAKTA NUTHUK</h2>
+    <ul id="fakta-list" class="fakta-list"></ul>
+  </section>
+
+  <section id="mode-liar" hidden aria-labelledby="h-liar">
+    <h2 id="h-liar" class="misreg" data-text="MODE LIAR">MODE LIAR</h2>
+    <p class="lede">
+      <svg class="ikon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><g class="lb" transform="translate(1.6,1.6)"><path d="M12 3.5L22 20H2z"/><path d="M12 9.5V14"/><circle cx="12" cy="16.8" r="1.1"/></g><g class="ld"><path d="M12 3.5L22 20H2z"/><path d="M12 9.5V14"/><circle cx="12" cy="16.8" r="1.1"/></g></svg>
+      Karcis rahasia kebuka, Mas. Parkir liar itu nuthuk — ini sanksinya:
+    </p>
+    <ul id="sanksi-list" class="fakta-list"></ul>
+    <button type="button" id="lapor-liar" class="btn magnet">Laporkan parkir liar</button>
+  </section>
+</main>
+
+<aside id="riwayat" aria-labelledby="h-riwayat">
+  <h2 id="h-riwayat" class="misreg kecil" data-text="RIWAYAT KARCIS">RIWAYAT KARCIS</h2>
+  <p id="riwayat-kosong">Belum ada karcis tersimpan. Cetak satu dulu, Mas.</p>
+  <ul id="riwayat-list"></ul>
+  <button type="button" id="riwayat-hapus" class="btn-kecil">Hapus semua riwayat</button>
+</aside>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<footer class="karcis-bawah">
+  <h2>Sumber tarif (contoh)</h2>
+  <ul class="sumber-list">
+    <li><strong>Jakarta</strong> — TJU on-street: motor Rp2.000/jam, mobil Rp5.000/jam. Pergub 31/2017 + Perda 1/2024.</li>
+    <li><strong>Surabaya</strong> — TJU: motor Rp2.000/parkir, mobil Rp5.000/parkir. Dishub Surabaya.</li>
+    <li><strong>Bandung</strong> — Pusat: motor Rp3.000/jam, mobil Rp5.000/jam; Penyangga: motor Rp2.000/jam, mobil Rp4.000/jam. Perwal 66/2021.</li>
+    <li><strong>Yogyakarta</strong> — Kawasan 1: motor Rp2.000/2 jam +Rp1.500/jam berikut, mobil Rp5.000/2 jam +Rp2.500/jam berikut; Kawasan 2/3: motor Rp2.000, mobil Rp5.000. Sumber tunggal — label contoh.</li>
+    <li><strong>Semarang</strong> — Zona A: motor Rp2.000/jam, mobil Rp3.000/jam progresif s.d. Rp4.000. Dishub Semarang.</li>
+    <li><strong>Medan</strong> — TJU: motor Rp2.000/parkir, mobil Rp4.000/parkir. Perwal 9/2026.</li>
+  </ul>
+  <p class="disclaimer">Tarif contoh sesuai perda tiap kota — yang di lapangan bisa beda, tanya juru parkir resminya.</p>
+  <p class="kolofon">KarcisParkir · Hari 12 · 30 Days of Code · cetakan risograph 3 tinta</p>
+</footer>
+
+<script defer src="vendor/gsap.min.js"></script>
+<script defer src="vendor/ScrollTrigger.min.js"></script>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

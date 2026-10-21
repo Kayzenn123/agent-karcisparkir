@@ -1,0 +1,328 @@
+/* KarcisParkir — cetakan risograph 3 tinta di kertas hijau-kuning.
+   Constraint: TANPA box-shadow blur & linear-gradient dekoratif.
+   Pola titik halftone via radial-gradient DIPERBOLEHKAN (pola cetak). */
+@layer font, dasar, komponen, gerak;
+
+@layer font {
+  @font-face {
+    font-family: 'Stylish'; font-style: normal; font-weight: 400; font-display: swap;
+    src: url('fonts/stylish-400.woff2') format('woff2');
+  }
+  @font-face {
+    font-family: 'Manuale'; font-style: normal; font-weight: 300 800; font-display: swap;
+    src: url('fonts/manuale-variable.woff2') format('woff2');
+  }
+  @font-face {
+    font-family: 'Plaster'; font-style: normal; font-weight: 400; font-display: swap;
+    src: url('fonts/plaster-400.woff2') format('woff2');
+  }
+  /* Fallback metrik: meniru metrik webfont (diukur via fontTools dari file
+     woff2: ascent/descent/line-gap sbg % upm; size-adjust dari rasio LEBAR
+     aktual webfont vs font fallback yang dipakai browser) agar font-swap
+     tidak menggeser layout (CLS). Rantai local(): nama asli dulu (dipakai
+     di perangkat user), lalu DejaVu (yang ada di mesin ini). */
+  @font-face {
+    font-family: 'StylishFallback'; font-style: normal; font-weight: 400;
+    src: local('Arial Black'), local('DejaVu Sans');
+    size-adjust: 84.63%; ascent-override: 82.10%; descent-override: 17.90%; line-gap-override: 25.00%;
+  }
+  @font-face {
+    font-family: 'ManualeFallback'; font-style: normal; font-weight: 300 800;
+    src: local('Georgia'), local('DejaVu Serif');
+    size-adjust: 85.31%; ascent-override: 98.00%; descent-override: 23.60%; line-gap-override: 22.10%;
+  }
+  @font-face {
+    font-family: 'PlasterFallback'; font-style: normal; font-weight: 400;
+    src: local('DejaVu Sans Mono');
+    size-adjust: 91.03%; ascent-override: 97.66%; descent-override: 27.34%; line-gap-override: 0%;
+  }
+}
+
+@layer dasar {
+  :root {
+    --bg: oklch(0.84 0.070 128);
+    --surface: oklch(0.75 0.090 128);
+    --text: oklch(0.16 0.030 128);
+    --muted: oklch(0.25 0.030 128);
+    --accent: oklch(0.38 0.110 248);
+    --accent-2: oklch(0.43 0.150 8);
+    --pop: oklch(0.60 0.140 298);
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Manuale', 'ManualeFallback', serif;
+    font-size: 1.0625rem;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+  /* pola halftone: titik cetak, bukan gradient warna */
+  body::before {
+    content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background-image: radial-gradient(circle, oklch(0.16 0.03 128 / 0.10) 1.1px, transparent 1.2px);
+    background-size: 22px 22px;
+  }
+  .grain { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 60; pointer-events: none; opacity: .08; mix-blend-mode: multiply; }
+  main, header, aside, footer, .marquee { position: relative; z-index: 1; }
+  h1, h2, h3 { line-height: 1.02; margin: 0 0 .6em; }
+  p { margin: 0 0 1em; }
+  :focus-visible { outline: 3px solid var(--accent-2); outline-offset: 3px; border-radius: 2px; }
+  #lewati {
+    position: absolute; left: .75rem; top: -4rem; z-index: 100;
+    background: var(--text); color: var(--bg); padding: .75rem 1.25rem;
+    font-weight: 700; text-decoration: none; border-radius: 4px;
+    transition: top .2s ease;
+  }
+  #lewati:focus { top: .75rem; }
+  input, select, button { font-size: 1rem; font-family: inherit; }
+  button { min-height: 44px; cursor: pointer; }
+  /* target sentuh ≥44px: checkbox/radio native diperbesar (qa tap-target) */
+  #gerak-toggle, .pilihan input { min-width: 44px; min-height: 44px; }
+}
+
+@layer komponen {
+  /* ---- header mini ---- */
+  .karcis-top {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: .75rem 1rem; border-bottom: 3px solid var(--text);
+    background: var(--bg); position: sticky; top: 0; z-index: 50;
+    min-height: 5.5rem; /* guard CLS: tinggi alami 89px */
+  }
+  .logo { display: inline-flex; align-items: center; gap: .5rem; text-decoration: none; color: var(--text); font-family: 'Stylish', 'StylishFallback', sans-serif; font-size: 1.5rem; min-height: 44px; }
+  .gerak-switch { display: inline-flex; align-items: center; gap: .5rem; border: 2px solid var(--text); border-radius: 999px; padding: .45rem .9rem; background: var(--surface); font-weight: 600; }
+  .gerak-switch input { width: 1.25rem; height: 1.25rem; accent-color: var(--accent-2); margin: 0; }
+
+  /* ---- ikon duotone ---- */
+  .ikon { width: 1.5em; height: 1.5em; flex: none; vertical-align: -0.3em; }
+  .ikon g { fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .ikon .lb * { stroke: var(--accent); opacity: .38; }
+  .ikon .ld * { stroke: var(--accent-2); }
+  .ikon circle[r="1.1"] { fill: var(--accent-2); stroke: none; }
+
+  /* ---- headline misregister 2 lapis ---- */
+  .misreg {
+    position: relative; color: transparent;
+    font-family: 'Stylish', 'StylishFallback', sans-serif; font-weight: 400;
+    font-size: clamp(2.6rem, 11vw, 7.5rem);
+    letter-spacing: .01em; text-wrap: balance;
+  }
+  .misreg::before, .misreg::after {
+    content: attr(data-text); position: absolute; inset: 0; pointer-events: none;
+  }
+  /* Niat desain: misregister 1–2px (total antar-lapis), bukan glitch. */
+  .misreg::before { color: var(--accent); transform: translate(-1px, -0.5px); }
+  .misreg::after { color: var(--accent-2); transform: translate(1px, 0.5px); mix-blend-mode: multiply; }
+  .misreg.kecil { font-size: clamp(1.8rem, 6vw, 3rem); }
+
+  .kicker { font-weight: 700; text-transform: uppercase; letter-spacing: .14em; font-size: .85rem; color: var(--muted); }
+  .lede { font-size: clamp(1.15rem, 3vw, 1.5rem); max-width: 34em; font-weight: 500; }
+
+  /* ---- marquee ---- */
+  .marquee {
+    position: relative; overflow: hidden; border-top: 3px solid var(--text); border-bottom: 3px solid var(--text);
+    background: var(--surface); padding: .55rem 0;
+    min-height: 3rem; /* guard CLS: tinggi alami mode animasi ~51px */
+  }
+  #marquee-b { background: var(--pop); }
+  #marquee-b .mq-item { color: var(--text); }
+  .marquee-track { display: flex; width: max-content; will-change: transform; }
+  .marquee-seg { display: flex; align-items: center; gap: 2.5rem; padding-right: 2.5rem; }
+  .mq-item { display: inline-flex; align-items: center; gap: .5rem; white-space: nowrap; font-weight: 800; letter-spacing: .06em; color: var(--text); }
+  .mq-fakta { font-weight: 500; letter-spacing: 0; text-transform: none; }
+  .marquee-jeda {
+    position: absolute; right: .5rem; top: 50%; transform: translateY(-50%);
+    display: inline-flex; align-items: center; gap: .35rem;
+    background: var(--bg); border: 2px solid var(--text); border-radius: 999px; padding: .3rem .8rem;
+    font-weight: 700; z-index: 2; min-height: 44px; /* target sentuh qa */
+  }
+  /* State marquee dikunci dari html[data-mode] (diset inline sebelum first
+     paint) — tanpa manipulasi class JS, tanpa layout shift saat init.
+     Mode ringan: KEDUA band tetap berjalan sebagai strip horizontal via
+     animasi CSS murni (compositor-only, murah; tanpa rAF/skew) — bukan
+     list vertikal statis. Mode tenang/mati: statis (aksesibilitas). */
+  html[data-mode="tenang"] .marquee .marquee-track,
+  html[data-mode="mati"] .marquee .marquee-track { transform: none; width: auto; }
+  html[data-mode="tenang"] .marquee .marquee-seg,
+  html[data-mode="mati"] .marquee .marquee-seg {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+    gap: .6rem 1.5rem; padding: .4rem 4.5rem .4rem 1rem; width: 100%;
+  }
+  html[data-mode="tenang"] .marquee-jeda,
+  html[data-mode="mati"] .marquee-jeda { display: none; }
+  /* guard CLS mode statis: tinggi alami ~247px */
+  html[data-mode="tenang"] .marquee,
+  html[data-mode="mati"] .marquee { min-height: 15rem; }
+  /* Marquee mode ringan: 2 band berlawanan arah, keyframes CSS.
+     Track berisi 2 segmen identik (clone via JS) sehingga loop -50% mulus. */
+  @keyframes mq-kanan { from { transform: translateX(-50%); } to { transform: translateX(0); } }
+  @keyframes mq-kiri { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+  html[data-mode="ringan"] .marquee-track.anim-css { animation: mq-kanan 32s linear infinite; }
+  html[data-mode="ringan"] #marquee-b .marquee-track.anim-css { animation-name: mq-kiri; }
+  html[data-mode="ringan"] .marquee.jeda-css .marquee-track.anim-css { animation-play-state: paused; }
+
+  /* ---- section & perforasi ---- */
+  section { padding: clamp(2.5rem, 7vw, 5rem) clamp(1rem, 5vw, 4rem); max-width: 1100px; margin: 0 auto; }
+  .perforasi {
+    height: 20px; background-color: var(--surface);
+    background-image: radial-gradient(circle, var(--bg) 6px, transparent 6.5px);
+    background-size: 26px 20px; background-position: center;
+    border-top: 2px dashed var(--muted); border-bottom: 2px dashed var(--muted);
+  }
+
+  /* ---- kartu kota ---- */
+  .kota-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 1.25rem; margin-top: 2rem; }
+  .kota-card {
+    position: relative; text-align: left; background: var(--surface);
+    border: 3px solid var(--text); border-radius: 6px; padding: 1.25rem 1rem 1rem;
+    color: var(--text); display: flex; flex-direction: column; gap: .35rem;
+    transition: background .2s ease;
+  }
+  .kota-card:hover { background: var(--bg); }
+  .kota-card[aria-pressed="true"] { background: var(--pop); }
+  .kota-card[aria-pressed="true"] .kota-tarif, .kota-card[aria-pressed="true"] .kota-zona { color: var(--text); font-weight: 700; }
+  .kota-word {
+    font-family: 'Stylish', 'StylishFallback', sans-serif; font-size: clamp(2.2rem, 5vw, 3.4rem);
+    color: var(--accent); display: block; transform-origin: 20% 60%;
+  }
+  /* Nama kota SELALU terlihat tanpa JS/IntersectionObserver (robustness:
+     konten penting tidak boleh bergantung pada reveal). Efek zoom-through
+     di mode penuh dipasang via JS sebagai enhancement (inline style GSAP),
+     bukan state awal di HTML/CSS. */
+  .kota-tarif { font-weight: 700; }
+  .kota-zona { color: var(--muted); font-size: .9rem; }
+
+  /* ---- form durasi ---- */
+  .kendaraan { border: 3px solid var(--text); border-radius: 6px; padding: 1rem 1.25rem 1.25rem; margin: 0 0 1.5rem; background: var(--surface); max-width: 30rem; }
+  .kendaraan legend { font-weight: 800; padding: 0 .5rem; }
+  .pilihan { display: inline-flex; align-items: center; gap: .6rem; border: 2px solid var(--text); border-radius: 999px; padding: .6rem 1.1rem; margin-right: .75rem; font-weight: 700; background: var(--bg); }
+  .pilihan input { width: 1.25rem; height: 1.25rem; accent-color: var(--accent-2); margin: 0; }
+  .pilihan:has(input:checked) { background: var(--pop); }
+  #zona-wrap { margin-bottom: 1.5rem; max-width: 30rem; }
+  #zona-wrap label { display: block; font-weight: 800; margin-bottom: .4rem; }
+  #zona { width: 100%; min-height: 44px; border: 3px solid var(--text); border-radius: 6px; background: var(--bg); padding: .5rem .75rem; }
+  .slider-wrap { max-width: 34rem; margin-bottom: 1.5rem; }
+  .slider-wrap label { display: block; font-weight: 800; margin-bottom: .5rem; }
+  #durasi-range { width: 100%; height: 44px; accent-color: var(--accent-2); margin: 0; }
+  .bantu { color: var(--muted); font-size: .92rem; }
+  .jam-row { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+  .jam-row label { display: block; font-weight: 700; margin-bottom: .4rem; }
+  #jam-masuk, #jam-keluar { min-height: 44px; border: 3px solid var(--text); border-radius: 6px; background: var(--bg); padding: .5rem .75rem; }
+  .estimasi-live {
+    font-size: clamp(1.4rem, 4vw, 2.2rem); font-weight: 700; color: var(--text);
+    border: 3px dashed var(--accent-2); border-radius: 6px; padding: 1rem 1.25rem; background: var(--surface);
+    max-width: 40rem; min-height: 4.5rem;
+  }
+
+  /* ---- karcis ---- */
+  .palang-besar { width: min(100%, 22rem); height: auto; display: block; margin: 0 auto 1.5rem; }
+  .palang-besar .garis * { stroke: var(--accent-2); stroke-width: 5; fill: none; stroke-linecap: round; }
+  .palang-besar .isi { fill: var(--accent); fill-opacity: 0; stroke: none; }
+  .palang-besar.terisi .isi { fill-opacity: .14; }
+  .palang-besar .lengan { transform-origin: 20px 30px; }
+  .palang-besar.terisi .lengan { transform: rotate(-48deg); transition: transform .9s cubic-bezier(.2, 1.4, .3, 1) .3s; }
+
+  .karcis-cetak {
+    position: relative; background: var(--bg); border: 3px solid var(--text); border-radius: 8px;
+    padding: clamp(1.25rem, 4vw, 2.5rem); max-width: 26rem; margin: 0 auto 1.5rem; overflow: hidden;
+  }
+  .garis-karcis { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  .garis-karcis .garis * { stroke: var(--accent); stroke-width: 3; fill: none; }
+  .garis-karcis .isi { fill: var(--accent); fill-opacity: 0; stroke: none; }
+  .karcis-cetak.terisi .garis-karcis .isi, [data-gambar].terisi .isi { fill-opacity: .12; transition: fill-opacity .6s ease .2s; }
+  /* Palang parkir SELALU utuh (tanpa draw-on dash): ia satu-satunya isi
+     antara h2 dan karcis — saat stroke disembunyikan menunggu IO, ia jadi
+     lubang kosong ~350px + titik merah nyangkut di awal transisi. Draw-on
+     tetap dipakai untuk garis karcis (overlay dekoratif di atas kartu
+     ber-border CSS, tidak pernah jadi lubang). Lengan terangkat + isi via
+     .terisi tetap jadi enhancement IO. */
+  [data-gambar]:not(.palang-besar) .garis * { stroke-dasharray: 1; stroke-dashoffset: 1; }
+  [data-gambar]:not(.palang-besar).digambar .garis * { stroke-dashoffset: 0; transition: stroke-dashoffset 1s ease; }
+  .nomor-seri { font-family: 'Plaster', 'PlasterFallback', monospace; font-size: clamp(1.5rem, 6.5vw, 2.4rem); color: var(--accent-2); margin: 0 0 .25rem; letter-spacing: .04em; white-space: nowrap; }
+  .karcis-kota { font-weight: 800; font-size: 1.2rem; margin-bottom: .1rem; }
+  .karcis-meta { color: var(--muted); margin-bottom: 1rem; }
+  .rincian { display: grid; grid-template-columns: 1fr auto; gap: .3rem 1rem; border-top: 2px dashed var(--muted); border-bottom: 2px dashed var(--muted); padding: .9rem 0; margin: 0 0 1rem; }
+  .rincian dt { color: var(--muted); }
+  .rincian dd { margin: 0; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; }
+  .total { font-family: 'Plaster', 'PlasterFallback', monospace; font-size: clamp(2rem, 7vw, 3rem); color: var(--accent); margin: 0; }
+  .karcis-catatan { color: var(--muted); font-size: .85rem; margin: .5rem 0 0; }
+  .cap-contoh {
+    position: absolute; right: .8rem; top: 3.1rem; font-family: 'Plaster', 'PlasterFallback', monospace; font-size: 1.25rem;
+    color: var(--accent-2); border: 4px solid var(--accent-2); border-radius: 6px; padding: .2rem .7rem;
+    transform: rotate(-12deg) scale(2.4); opacity: 0; letter-spacing: .1em;
+  }
+  .cap-contoh.tercap { opacity: .92; transform: rotate(-12deg) scale(1); transition: transform .28s cubic-bezier(.2, 2.2, .4, 1), opacity .2s ease; }
+
+  .aksi { display: flex; gap: .9rem; flex-wrap: wrap; justify-content: center; }
+  .btn {
+    display: inline-flex; align-items: center; gap: .6rem; min-height: 52px;
+    background: var(--text); color: var(--bg); border: 3px solid var(--text); border-radius: 999px;
+    padding: .7rem 1.5rem; font-weight: 800; font-size: 1.05rem; text-decoration: none;
+  }
+  .btn .ikon .lb * { stroke: var(--bg); opacity: .5; }
+  .btn .ikon .ld * { stroke: var(--pop); }
+  .btn:hover { background: var(--accent-2); border-color: var(--accent-2); }
+  .btn-kecil {
+    border: 2px solid var(--text); background: var(--surface); color: var(--text); border-radius: 999px;
+    padding: .35rem .9rem; font-weight: 700; font-size: .9rem; min-height: 44px;
+  }
+
+  /* ---- fakta & mode liar ---- */
+  .fakta-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 1rem; }
+  .fakta-list li { border: 3px solid var(--text); border-radius: 6px; background: var(--surface); padding: 1rem 1.25rem; font-weight: 600; }
+  .fakta-list li::marker { content: none; }
+  .fakta-list li::before { content: '✳ '; color: var(--accent-2); font-weight: 800; }
+  #mode-liar { border: 4px solid var(--accent-2); border-radius: 10px; background: var(--surface); margin-top: 2rem; }
+  #mode-liar[hidden] { display: none; }
+
+  /* ---- riwayat ---- */
+  #riwayat { max-width: 1100px; margin: 0 auto; padding: 2rem clamp(1rem, 5vw, 4rem) 3rem; border-top: 3px solid var(--text); }
+  #riwayat-list { list-style: none; padding: 0; margin: 0 0 1rem; display: grid; gap: .7rem; }
+  .riwayat-item { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .9rem; border: 2px solid var(--text); border-radius: 6px; background: var(--surface); padding: .7rem 1rem; }
+  .riwayat-seri { font-family: 'Plaster', 'PlasterFallback', monospace; color: var(--accent-2); }
+  .riwayat-info { flex: 1 1 12rem; }
+
+  /* ---- toast ---- */
+  /* Toast kosong = tidak dirender sama sekali (visibility), bukan digeser
+     150% — pola lama menyisakan pil hitam mengintip di tepi viewport dan
+     artefak di screenshot full-page (fixed dirender di posisi viewport awal). */
+  #toast {
+    position: fixed; left: 50%; bottom: 1.25rem; transform: translateX(-50%) translateY(.75rem);
+    background: var(--text); color: var(--bg); padding: .9rem 1.4rem; border-radius: 999px;
+    font-weight: 700; z-index: 80; max-width: min(92vw, 34rem); text-align: center;
+    opacity: 0; visibility: hidden;
+    transition: transform .3s ease, opacity .3s ease, visibility .3s;
+  }
+  #toast:not(:empty) { transform: translateX(-50%) translateY(0); opacity: 1; visibility: visible; }
+
+  /* ---- footer ---- */
+  .karcis-bawah { border-top: 3px solid var(--text); padding: 2.5rem clamp(1rem, 5vw, 4rem); max-width: 1100px; margin: 0 auto; }
+  .karcis-bawah h2 { font-family: 'Stylish', 'StylishFallback', sans-serif; font-size: 1.6rem; color: var(--accent); }
+  .sumber-list { padding-left: 1.2rem; display: grid; gap: .5rem; }
+  .disclaimer { font-weight: 700; border: 2px dashed var(--accent-2); border-radius: 6px; padding: .8rem 1rem; margin-top: 1.25rem; }
+  .kolofon { color: var(--muted); font-size: .85rem; margin-top: 1rem; }
+
+  /* ---- kursor cap ---- */
+  .kursor-cap {
+    position: fixed; left: 0; top: 0; width: 34px; height: 34px; z-index: 70; pointer-events: none;
+    border: 3px solid var(--accent-2); border-radius: 50%;
+  }
+  .kursor-cap::after { content: ''; position: absolute; inset: 8px; background: var(--accent-2); border-radius: 50%; opacity: .5; }
+}
+
+@layer gerak {
+  /* split reveal: kata muncul dari mask */
+  .kata { display: inline-block; overflow: hidden; vertical-align: bottom; padding-bottom: .08em; margin-bottom: -.08em; }
+  .kata-dlm { display: inline-block; transform: translateY(115%); transition: transform .55s cubic-bezier(.2, .8, .2, 1); transition-delay: calc(var(--i) * 45ms); }
+  [data-split].on .kata-dlm { transform: translateY(0); }
+
+  .denyut { will-change: font-variation-settings; }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    .kata-dlm { transform: none; }
+  }
+}
